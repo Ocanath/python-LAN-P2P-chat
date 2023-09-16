@@ -1,4 +1,7 @@
 from udp_bkst_query import *
+import argparse
+import cv2
+import numpy as np 
 
 def get_port_from_usr():
 	print("What port do u want")
@@ -40,5 +43,46 @@ if __name__ == "__main__":
 		print("Bind successful")
 	except:
 		print("something blocked us from binding to this ip")
+
+	client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+	client_socket.settimeout(0.0)
+	bkst_ip = udp_server_addr[0]
+	if(bkst_ip!='127.0.0.1'):
+		bkst_ip = bkst_ip.split('.')
+		bkst_ip[3] = '255'
+		bkst_ip = '.'.join(bkst_ip)
+		print("Using bkst ip: "+bkst_ip)
+	dest_addr = (bkst_ip, port)
+	sendstr = ''
+	recvstr = ''
+	while(1):
 	
 	
+		try:
+			pkt,source_addr = server_socket.recvfrom(512)
+			if (len(pkt) != 0):
+				recvstr = str(pkt)
+				print(source_addr+": "+recvstr)
+		except:
+			pass
+	
+		
+		image = 0
+		cv2.imshow('Chat window', cv2.flip(image, 1))
+		key = cv2.waitKey(1) & 0xFF
+		if(key != 0 and key != 255):
+			
+			if(key == 27):	#escape
+				break
+			key = chr(key)
+			# print(key,end='')
+			if key != '\r' and key != '\n':	#enter
+				sendstr = sendstr+key
+				
+			else:
+				print("Sending: "+sendstr)
+				pld = bytearray(sendstr,encoding='utf8')
+				client_socket.sendto(pld, dest_addr)
+				# print('')
+				sendstr = ''
+				

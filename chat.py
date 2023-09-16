@@ -12,11 +12,11 @@ def get_port_from_usr():
 		print("out of range")
 
 
-def get_host_ip_to_bind(port, use_loopback=False):
+def get_host_ip_to_bind(port,use_loopback=False):
+	if(use_loopback==True):
+		return "127.0.0.1"
 	if port > 100 and port < 2**16-1:
 		print("port is: "+str(port))
-		
-		
 		hostname = socket.gethostname()
 		# addr=socket.gethostbyname(hostname)
 		hostname,aliaslist,addrlist=socket.gethostbyname_ex(hostname)
@@ -34,11 +34,16 @@ def get_host_ip_to_bind(port, use_loopback=False):
 
 if __name__ == "__main__":
 	port = get_port_from_usr()
-	addr = get_host_ip_to_bind(port)
+	resp = input("Use loopback? y/n")
+	if(resp=='y'):
+		addr = get_host_ip_to_bind(port,use_loopback=True)
+	else:
+		addr = get_host_ip_to_bind(port)
 	udp_server_addr = (addr, port)
 	server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	server_socket.settimeout(0.0) #make non blocking
 	try:
+		print("binding: "+udp_server_addr[0]+", "+str(udp_server_addr[1]))
 		server_socket.bind(udp_server_addr)
 		print("Bind successful")
 	except:
@@ -55,14 +60,14 @@ if __name__ == "__main__":
 	dest_addr = (bkst_ip, port)
 	sendstr = ''
 	recvstr = ''
+
+
 	while(1):
 	
 	
 		try:
 			pkt,source_addr = server_socket.recvfrom(512)
-			if (len(pkt) != 0):
-				recvstr = str(pkt)
-				print(source_addr+": "+recvstr)
+			print("From: "+source_addr[0]+": "+str(pkt))
 		except:
 			pass
 	

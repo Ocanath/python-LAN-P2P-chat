@@ -1,4 +1,5 @@
-from udp_bkst_query import *
+# from udp_bkst_query import *
+import socket
 import argparse
 import cv2
 import numpy as np 
@@ -85,7 +86,7 @@ if __name__ == "__main__":
 				sendstr = sendstr+key
 				
 			else:
-				print("Sending: "+sendstr)
+				# print("Sending: "+sendstr)
 				pld = bytearray(sendstr,encoding='utf8')
 				client_socket.sendto(pld, dest_addr)
 				# print('')

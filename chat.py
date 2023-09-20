@@ -1,8 +1,10 @@
 # from udp_bkst_query import *
 import socket
 import argparse
-import cv2
 import numpy as np 
+import threading
+import queue
+
 
 def get_port_from_usr():
 	print("What port do u want")
@@ -33,9 +35,31 @@ def get_host_ip_to_bind(port,use_loopback=False):
 			return addr
 
 
+def blocking_input(kill_sig, soc, dest, myname):
+	while(kill_sig.is_set()==False):
+		try:
+			str = myname+input()
+			pld = bytearray(str,encoding='utf8')
+			soc.sendto(pld,dest)
+		except EOFError:
+			kill_sig.set()
+
+def print_thread(kill_sig, soc):
+	while(kill_sig.is_set()==False):	
+		try:
+			pkt,source_addr = server_socket.recvfrom(512)
+			print("From: "+source_addr[0]+": "+str(pkt))
+		except:
+			pass
+		
+
+
 if __name__ == "__main__":
 	port = get_port_from_usr()
 	resp = input("Use loopback? y/n")
+	myname = input("Who are you?")
+	if(myname != ''):
+		myname = myname + ": "
 	if(resp=='y'):
 		addr = get_host_ip_to_bind(port,use_loopback=True)
 	else:
@@ -59,36 +83,17 @@ if __name__ == "__main__":
 		bkst_ip = '.'.join(bkst_ip)
 		print("Using bkst ip: "+bkst_ip)
 	dest_addr = (bkst_ip, port)
-	sendstr = ''
+	sendstr = myname
 	recvstr = ''
 
+	ks = threading.Event()
+	t0 = threading.Thread(target=blocking_input, args=(ks, client_socket,dest_addr,myname,))
+	t1 = threading.Thread(target=print_thread, args=(ks, client_socket,))
 
-	while(1):
 	
+	t0.start()
+	t1.start()
+	t0.join()
+	t1.join()
 	
-		try:
-			pkt,source_addr = server_socket.recvfrom(512)
-			print("From: "+source_addr[0]+": "+str(pkt))
-		except:
-			pass
-	
-		
-		image = 0
-		cv2.imshow('Chat window', cv2.flip(image, 1))
-		key = cv2.waitKey(1) & 0xFF
-		if(key != 0 and key != 255):
-			
-			if(key == 27):	#escape
-				break
-			key = chr(key)
-			# print(key,end='')
-			if key != '\r' and key != '\n':	#enter
-				sendstr = sendstr+key
-				
-			else:
-				# print("Sending: "+sendstr)
-				pld = bytearray(sendstr,encoding='utf8')
-				client_socket.sendto(pld, dest_addr)
-				# print('')
-				sendstr = ''
-				
+	client_socket.close()

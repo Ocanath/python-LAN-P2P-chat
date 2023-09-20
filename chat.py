@@ -48,7 +48,7 @@ def print_thread(kill_sig, soc):
 	while(kill_sig.is_set()==False):	
 		try:
 			pkt,source_addr = server_socket.recvfrom(512)
-			print("From: "+source_addr[0]+": "+str(pkt))
+			print("From: "+source_addr[0]+":"+str(source_addr[1])+": "+str(pkt))
 		except:
 			pass
 		
@@ -87,8 +87,8 @@ if __name__ == "__main__":
 	recvstr = ''
 
 	ks = threading.Event()
-	t0 = threading.Thread(target=blocking_input, args=(ks, client_socket,dest_addr,myname,))
-	t1 = threading.Thread(target=print_thread, args=(ks, client_socket,))
+	t0 = threading.Thread(target=blocking_input, args=(ks, server_socket,dest_addr,myname,))
+	t1 = threading.Thread(target=print_thread, args=(ks, server_socket,))
 
 	
 	t0.start()

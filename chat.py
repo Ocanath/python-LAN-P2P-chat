@@ -15,24 +15,22 @@ def get_port_from_usr():
 		print("out of range")
 
 
-def get_host_ip_to_bind(port,use_loopback=False):
+def get_host_ip_to_bind(use_loopback=False):
 	if(use_loopback==True):
 		return "127.0.0.1"
-	if port > 100 and port < 2**16-1:
-		print("port is: "+str(port))
-		hostname = socket.gethostname()
-		# addr=socket.gethostbyname(hostname)
-		hostname,aliaslist,addrlist=socket.gethostbyname_ex(hostname)
-		usr_string_input = ''
-		usr_input = 0
-		if(len(addrlist) > 1):
-			print("Select an IP to use from list with a number (0,1,2,...)\r\n"+str(addrlist))
-			usr_string_input = input()
-			usr_input = int(usr_string_input)
-		if(usr_input >= 0 and usr_input < len(addrlist)):
-			addr=str(addrlist[usr_input])
-			print("Host IP Addr: "+addr)
-			return addr
+	hostname = socket.gethostname()
+	# addr=socket.gethostbyname(hostname)
+	hostname,aliaslist,addrlist=socket.gethostbyname_ex(hostname)
+	usr_string_input = ''
+	usr_input = 0
+	if(len(addrlist) > 1):
+		print("Select an IP to use from list with a number (0,1,2,...)\r\n"+str(addrlist))
+		usr_string_input = input()
+		usr_input = int(usr_string_input)
+	if(usr_input >= 0 and usr_input < len(addrlist)):
+		addr=str(addrlist[usr_input])
+		print("Host IP Addr: "+addr)
+		return addr
 
 
 def blocking_input(kill_sig, soc, dest, myname):
@@ -49,22 +47,34 @@ def print_thread(kill_sig, soc):
 		try:
 			pkt,source_addr = server_socket.recvfrom(512)
 			print("From: "+source_addr[0]+":"+str(source_addr[1])+": "+str(pkt))
-		except:
+		except BlockingIOError:
 			pass
 		
 
 
 if __name__ == "__main__":
-	port = get_port_from_usr()
-	resp = input("Use loopback? y/n")
+
+	parser = argparse.ArgumentParser(description='Chat Parser')
+	parser.add_argument('--hardload_bind_ip', type=str, help="hard ip to bind", default='')
+	parser.add_argument('--port', type=int, help="enter port", default=0)
+	parser.add_argument('--use_any',help="flag for using 0.0.0.0",action='store_true')
+	args = parser.parse_args()
+
+	port = args.port
+	if(port == 0):
+		port = get_port_from_usr()
 	myname = input("Who are you?")
 	if(myname != ''):
 		myname = myname + ": "
-	if(resp=='y'):
-		addr = get_host_ip_to_bind(port,use_loopback=True)
+	udp_server_addr = ()
+	if(args.use_any == False):
+		if(args.hardload_bind_ip == ''):
+			addr = get_host_ip_to_bind(port)
+			udp_server_addr = (addr, port)
+		else:
+			udp_server_addr = (args.hardload_bind_ip, port)
 	else:
-		addr = get_host_ip_to_bind(port)
-	udp_server_addr = (addr, port)
+		udp_server_addr = ('0.0.0.0',port)
 	server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	server_socket.settimeout(0.0) #make non blocking
 	try:
@@ -77,11 +87,13 @@ if __name__ == "__main__":
 	client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	client_socket.settimeout(0.0)
 	bkst_ip = udp_server_addr[0]
-	if(bkst_ip!='127.0.0.1'):
+	if(bkst_ip!='127.0.0.1' and args.use_any == False):
 		bkst_ip = bkst_ip.split('.')
 		bkst_ip[3] = '255'
 		bkst_ip = '.'.join(bkst_ip)
 		print("Using bkst ip: "+bkst_ip)
+	else:
+		bkst_ip = input("Enter target IP:")
 	dest_addr = (bkst_ip, port)
 	sendstr = myname
 	recvstr = ''

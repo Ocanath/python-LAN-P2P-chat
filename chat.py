@@ -58,12 +58,16 @@ if __name__ == "__main__":
 	parser.add_argument('--hardload_bind_ip', type=str, help="hard ip to bind", default='')
 	parser.add_argument('--port', type=int, help="enter port", default=0)
 	parser.add_argument('--use_any',help="flag for using 0.0.0.0",action='store_true')
+	parser.add_argument('--multicast', help="enable for mutlicasting", action='store_true')
+	parser.add_argument('--name',help='our name',default='')
 	args = parser.parse_args()
 
 	port = args.port
 	if(port == 0):
 		port = get_port_from_usr()
-	myname = input("Who are you?")
+	myname = ''
+	if(args.name == ''):
+		myname = input("Who are you?")
 	if(myname != ''):
 		myname = myname + ": "
 	udp_server_addr = ()
@@ -73,9 +77,15 @@ if __name__ == "__main__":
 			udp_server_addr = (addr, port)
 		else:
 			udp_server_addr = (args.hardload_bind_ip, port)
-	else:
+	elif(args.multicast == False):
 		udp_server_addr = ('0.0.0.0',port)
-	server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+	else:
+		udp_server_addr = ('',port)	
+	server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+	try:
+		server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+	except AttributeError:
+		print("Reuseaddr option failed")
 	server_socket.settimeout(0.0) #make non blocking
 	try:
 		print("binding: "+udp_server_addr[0]+", "+str(udp_server_addr[1]))
@@ -84,22 +94,30 @@ if __name__ == "__main__":
 	except:
 		print("something blocked us from binding to this ip")
 
-	client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+	client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
+	# client_socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 2)
+	client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 	client_socket.settimeout(0.0)
+
+	dest_addr = ''
 	bkst_ip = udp_server_addr[0]
-	if(bkst_ip!='127.0.0.1' and args.use_any == False):
+	if(bkst_ip!='127.0.0.1' and args.use_any == False and args.multicast == False):
 		bkst_ip = bkst_ip.split('.')
 		bkst_ip[3] = '255'
 		bkst_ip = '.'.join(bkst_ip)
-		print("Using bkst ip: "+bkst_ip)
+		dest_addr = (bkst_ip, port)
+	elif(args.multicast == False):
+		bkst_ip = input("Enter target IP:")		
+		dest_addr = (bkst_ip, port)
 	else:
-		bkst_ip = input("Enter target IP:")
-	dest_addr = (bkst_ip, port)
+		print("trying this multicast shit")
+		dest_addr = ('224.1.1.1',port)
+	print("Using bkst ip: "+dest_addr[0]+":"+str(dest_addr[1]))
 	sendstr = myname
 	recvstr = ''
 
 	ks = threading.Event()
-	t0 = threading.Thread(target=blocking_input, args=(ks, server_socket,dest_addr,myname,))
+	t0 = threading.Thread(target=blocking_input, args=(ks, client_socket,dest_addr,myname,))
 	t1 = threading.Thread(target=print_thread, args=(ks, server_socket,))
 
 	

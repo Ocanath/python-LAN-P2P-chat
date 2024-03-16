@@ -12,7 +12,7 @@ from serial.tools import list_ports
 	This function connects to every available serial port and returns the list 
 	of connected ports
 """
-def connect_to_all_serial_ports():
+def connect_to_all_serial_ports(baud):
 	""" 
 		Find a serial com port.
 	"""
@@ -31,7 +31,7 @@ def connect_to_all_serial_ports():
 	for p in port:
 		try:
 			ser = []
-			ser = (serial.Serial(p[0],args.baud, timeout = 0, write_timeout = 0))
+			ser = (serial.Serial(p[0], baud, timeout = 0, write_timeout = 0))
 			slist.append(ser)
 			print ("connected!", p)
 		except:
@@ -77,7 +77,7 @@ def blocking_input(kill_sig, soc, dest, myname):
 			kill_sig.set()
 
 def print_thread(kill_sig, soc):
-	slist = connect_to_all_serial_ports()
+	slist = connect_to_all_serial_ports(115200)
 	while(kill_sig.is_set()==False):	
 		try:
 			pkt,source_addr = server_socket.recvfrom(512)

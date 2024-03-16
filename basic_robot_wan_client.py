@@ -20,7 +20,10 @@ if __name__ == "__main__":
     getch = _Getch()	
     while(1):
         ch = getch()
-        byte_ch = bytes(ch,encoding='utf8')
+        try:
+            byte_ch = bytes(ch,encoding='utf8')
+        except:
+            byte_ch = ch
         if(byte_ch == bytes([27])):
             print("Caught ESC, exiting")
             break

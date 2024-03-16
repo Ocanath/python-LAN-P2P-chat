@@ -1,10 +1,44 @@
 # from udp_bkst_query import *
 import socket
 import argparse
-import numpy as np 
+# import numpy as np 
 import threading
 import queue
+import serial
+from serial.tools import list_ports
 
+
+"""
+	This function connects to every available serial port and returns the list 
+	of connected ports
+"""
+def connect_to_all_serial_ports():
+	""" 
+		Find a serial com port.
+	"""
+	com_ports_list = list(list_ports.comports())
+	port = []
+	slist = []
+	for p in com_ports_list:
+		if(p):
+			pstr = ""
+			pstr = p
+			port.append(pstr)
+			print("Found:", pstr)
+	if not port:
+		print("No port found")
+
+	for p in port:
+		try:
+			ser = []
+			ser = (serial.Serial(p[0],args.baud, timeout = 0, write_timeout = 0))
+			slist.append(ser)
+			print ("connected!", p)
+		except:
+			print("Attempt to connect to", p, "has failed.")
+			pass
+	print( "found ", len(slist), "ports.")
+	return slist
 
 def get_port_from_usr():
 	print("What port do u want")
@@ -43,10 +77,13 @@ def blocking_input(kill_sig, soc, dest, myname):
 			kill_sig.set()
 
 def print_thread(kill_sig, soc):
+	slist = connect_to_all_serial_ports()
 	while(kill_sig.is_set()==False):	
 		try:
 			pkt,source_addr = server_socket.recvfrom(512)
 			print("From: "+source_addr[0]+":"+str(source_addr[1])+": "+str(pkt))
+			for s in slist:	#write serial
+				s.write(pkt)
 		except BlockingIOError:
 			pass
 		
@@ -56,14 +93,22 @@ if __name__ == "__main__":
 
 	parser = argparse.ArgumentParser(description='Chat Parser')
 	parser.add_argument('--hardload_bind_ip', type=str, help="hard ip to bind", default='')
-	parser.add_argument('--port', type=int, help="enter port for the server to bind to", default=0)
+	parser.add_argument('--port', type=int, help="enter port for the server to bind to. By default, also the port we transmit to", default=0)
 	parser.add_argument('--use_any',help="flag for using 0.0.0.0",action='store_true')
+	parser.add_argument('--target-ip',help="IP and address of chat target. If system supports can be broadcast, or a WAN address",type=str)
+	parser.add_argument('--target-port',help="Override of target port, in case we want to have a different bind port and target port",type=int)
+	parser.add_argument('--chatname', help="Your name in the chat",type=str)
 	args = parser.parse_args()
+
 
 	port = args.port
 	if(port == 0):
 		port = get_port_from_usr()
-	myname = input("Who are you?")
+	myname = ''
+	if(args.chatname is None):
+		myname = input("Who are you?")
+	else:
+		myname = args.chatname
 	if(myname != ''):
 		myname = myname + ": "
 	udp_server_addr = ()
@@ -87,14 +132,20 @@ if __name__ == "__main__":
 	client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	client_socket.settimeout(0.0)
 	bkst_ip = udp_server_addr[0]
+	bkst_port = port		
 	if(bkst_ip!='127.0.0.1' and args.use_any == False):
 		bkst_ip = bkst_ip.split('.')
 		bkst_ip[3] = '255'
 		bkst_ip = '.'.join(bkst_ip)
 		print("Using bkst ip: "+bkst_ip)
-	else:
+	elif args.target_ip is None:
 		bkst_ip = input("Enter target IP:")
-	dest_addr = (bkst_ip, port)
+	else:
+		bkst_ip = args.target_ip
+	if(args.target_port is not None):
+		bkst_port = args.target_port
+	dest_addr = (bkst_ip, bkst_port)
+	print("Targeting", dest_addr[0], ":", dest_addr[1])
 	sendstr = myname
 	recvstr = ''
 

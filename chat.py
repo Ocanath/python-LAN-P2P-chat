@@ -56,7 +56,7 @@ if __name__ == "__main__":
 
 	parser = argparse.ArgumentParser(description='Chat Parser')
 	parser.add_argument('--hardload_bind_ip', type=str, help="hard ip to bind", default='')
-	parser.add_argument('--port', type=int, help="enter port", default=0)
+	parser.add_argument('--port', type=int, help="enter port for the server to bind to", default=0)
 	parser.add_argument('--use_any',help="flag for using 0.0.0.0",action='store_true')
 	args = parser.parse_args()
 

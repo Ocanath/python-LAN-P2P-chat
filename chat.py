@@ -16,6 +16,7 @@ def connect_to_all_serial_ports(baud):
 	""" 
 		Find a serial com port.
 	"""
+	print("Using baud",baud)
 	com_ports_list = list(list_ports.comports())
 	port = []
 	slist = []
@@ -76,8 +77,8 @@ def blocking_input(kill_sig, soc, dest, myname):
 		except EOFError:
 			kill_sig.set()
 
-def print_thread(kill_sig, soc):
-	slist = connect_to_all_serial_ports(115200)
+def print_thread(kill_sig, soc, baud):
+	slist = connect_to_all_serial_ports(baud)
 	while(kill_sig.is_set()==False):	
 		try:
 			pkt,source_addr = server_socket.recvfrom(512)
@@ -98,6 +99,7 @@ if __name__ == "__main__":
 	parser.add_argument('--target-ip',help="IP and address of chat target. If system supports can be broadcast, or a WAN address",type=str)
 	parser.add_argument('--target-port',help="Override of target port, in case we want to have a different bind port and target port",type=int)
 	parser.add_argument('--chatname', help="Your name in the chat",type=str)
+	parser.add_argument('--baud', help="baudrate override for serial chat message forwarding",type=int, default=230400)
 	args = parser.parse_args()
 
 
@@ -151,7 +153,7 @@ if __name__ == "__main__":
 
 	ks = threading.Event()
 	t0 = threading.Thread(target=blocking_input, args=(ks, server_socket,dest_addr,myname,))
-	t1 = threading.Thread(target=print_thread, args=(ks, server_socket,))
+	t1 = threading.Thread(target=print_thread, args=(ks, server_socket, args.baud))
 
 	
 	t0.start()

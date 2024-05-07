@@ -2,8 +2,8 @@
 import socket
 import argparse
 import threading
-import queue
-
+from datetime import datetime
+import time
 
 def get_port_from_usr():
 	print("What port do u want")
@@ -41,11 +41,30 @@ def blocking_input(kill_sig, soc, dest, myname):
 		except EOFError:
 			kill_sig.set()
 
-def print_thread(kill_sig, soc):
+def print_thread(kill_sig, do_ttracker, soc):
+	last_time = time.time()
+	is_in_office = 0
 	while(kill_sig.is_set()==False):	
 		try:
 			pkt,source_addr = server_socket.recvfrom(512)
-			print("From: "+source_addr[0]+":"+str(source_addr[1])+": "+str(pkt))
+			curtime = datetime.now()
+			cur_epoch_time = time.time()	#epoch
+
+			if(do_ttracker == True):
+				if(pkt != bytearray("WAZZAP BIATCHS ITS YA BOY JESSE", encoding='utf8')):
+					print("From: "+source_addr[0]+":"+str(source_addr[1])+": "+str(pkt))
+				else:			#we received the special message corresponding to me being here
+					elapsed_sec = cur_epoch_time - last_time
+					if(elapsed_sec > 120 and is_in_office != 0):
+						print("Left at: "+curtime.strftime("%m/%d/%Y %H:%M:%S"))
+						is_in_office = 0
+					elif(elapsed_sec <= 120 and is_in_office == 0):
+						print("Arrived at: "+curtime.strftime("%m/%d/%Y %H:%M:%S"))
+						is_in_office = 1
+
+					if(elapsed_sec > 240 and is_in_office == 0):
+						pass	#TODO: consider jesse gone for the day, and write the log file
+			
 		except BlockingIOError:
 			pass
 		
@@ -59,6 +78,7 @@ if __name__ == "__main__":
 	parser.add_argument('--use_any',help="flag for using 0.0.0.0",action='store_true')
 	parser.add_argument("--target_ip", type=str, help="cmd line argument for ip to send messages to", default='')
 	parser.add_argument("--no_name", action='store_true')
+	parser.add_argument("--do_ttracking", action='store_true')
 	args = parser.parse_args()
 
 	port = args.port
@@ -107,7 +127,7 @@ if __name__ == "__main__":
 
 	ks = threading.Event()
 	t0 = threading.Thread(target=blocking_input, args=(ks, server_socket,dest_addr,myname,))
-	t1 = threading.Thread(target=print_thread, args=(ks, server_socket,))
+	t1 = threading.Thread(target=print_thread, args=(ks, args.do_ttracking, server_socket,))
 
 	
 	t0.start()

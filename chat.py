@@ -58,6 +58,7 @@ if __name__ == "__main__":
 	parser.add_argument('--hardload_bind_ip', type=str, help="hard ip to bind", default='')
 	parser.add_argument('--port', type=int, help="enter port", default=0)
 	parser.add_argument('--use_any',help="flag for using 0.0.0.0",action='store_true')
+	parser.add_argument("--target_ip", type=str, help="cmd line argument for ip to send messages to", default='')
 	args = parser.parse_args()
 
 	port = args.port
@@ -92,6 +93,8 @@ if __name__ == "__main__":
 		bkst_ip[3] = '255'
 		bkst_ip = '.'.join(bkst_ip)
 		print("Using bkst ip: "+bkst_ip)
+	elif (args.target_ip != ''):
+		bkst_ip = args.target_ip
 	else:
 		bkst_ip = input("Enter target IP:")
 	dest_addr = (bkst_ip, port)

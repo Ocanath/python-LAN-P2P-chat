@@ -58,14 +58,17 @@ if __name__ == "__main__":
 	parser.add_argument('--port', type=int, help="enter port", default=0)
 	parser.add_argument('--use_any',help="flag for using 0.0.0.0",action='store_true')
 	parser.add_argument("--target_ip", type=str, help="cmd line argument for ip to send messages to", default='')
+	parser.add_argument("--no_name", action='store_true')
 	args = parser.parse_args()
 
 	port = args.port
 	if(port == 0):
 		port = get_port_from_usr()
-	myname = input("Who are you?")
-	if(myname != ''):
-		myname = myname + ": "
+	myname = ''
+	if(args.no_name == False):
+		myname = input("Who are you?")
+		if(myname != ''):
+			myname = myname + ": "
 	udp_server_addr = ()
 	if(args.use_any == False):
 		if(args.hardload_bind_ip == ''):

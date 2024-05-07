@@ -77,6 +77,7 @@ if __name__ == "__main__":
 	else:
 		udp_server_addr = ('0.0.0.0',port)
 	server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+	server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 	server_socket.settimeout(0.0) #make non blocking
 	try:
 		print("binding: "+udp_server_addr[0]+", "+str(udp_server_addr[1]))
@@ -86,6 +87,7 @@ if __name__ == "__main__":
 		print("something blocked us from binding to this ip")
 
 	client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+	client_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
 	client_socket.settimeout(0.0)
 	bkst_ip = udp_server_addr[0]
 	if(bkst_ip!='127.0.0.1' and args.use_any == False):

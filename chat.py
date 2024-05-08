@@ -61,15 +61,15 @@ def print_thread(kill_sig, do_ttracker, soc):
 			pass
 		if(do_ttracker == True):
 			curtime = datetime.now()
-			if(elapsed_sec > 120 and is_in_office != 0):
+			if(elapsed_sec > 600 and is_in_office != 0):
 				print("Left at: "+curtime.strftime("%m/%d/%Y %H:%M:%S"))
 				is_in_office = 0
-			elif(elapsed_sec <= 120):	
+			elif(elapsed_sec <= 600):	
 				if( is_in_office == 0):
 					print("Arrived at: "+curtime.strftime("%m/%d/%Y %H:%M:%S"))
 					is_in_office = 1
-			if(elapsed_sec > 240 and is_in_office == 0):
-				pass	#TODO: consider jesse gone for the day, and write the log file
+			if(elapsed_sec > 1200 and is_in_office == 0):
+				pass	#TODO: consider jesse gone for the day, and write the log exit time to the log file
 
 		
 

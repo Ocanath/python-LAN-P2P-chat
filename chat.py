@@ -2,8 +2,7 @@
 import socket
 import argparse
 import threading
-from datetime import datetime
-import time
+from time_logging import *
 
 def get_port_from_usr():
 	print("What port do u want")
@@ -62,11 +61,13 @@ def print_thread(kill_sig, do_ttracker, soc):
 		if(do_ttracker == True):
 			curtime = datetime.now()
 			if(elapsed_sec > 600 and is_in_office != 0):
-				print("Left at: "+curtime.strftime("%m/%d/%Y %H:%M:%S"))
+				print("Departed at: "+curtime.strftime("%m/%d/%Y %H:%M:%S"))
+				write_log_entry("Departed, ", curtime)
 				is_in_office = 0
 			elif(elapsed_sec <= 600):	
 				if( is_in_office == 0):
 					print("Arrived at: "+curtime.strftime("%m/%d/%Y %H:%M:%S"))
+					write_log_entry("Arrived, ", curtime)
 					is_in_office = 1
 			if(elapsed_sec > 1200 and is_in_office == 0):
 				pass	#TODO: consider jesse gone for the day, and write the log exit time to the log file

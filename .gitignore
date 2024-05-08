@@ -1,3 +1,4 @@
 *.exe
 *.h.gch
 ***/__pycache__/
+*.csv

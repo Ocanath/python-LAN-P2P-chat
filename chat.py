@@ -44,29 +44,33 @@ def blocking_input(kill_sig, soc, dest, myname):
 def print_thread(kill_sig, do_ttracker, soc):
 	last_time = time.time()
 	is_in_office = 0
+	elapsed_sec = 0
 	while(kill_sig.is_set()==False):	
+		cur_epoch_time = time.time()	#epoch
+		elapsed_sec = cur_epoch_time - last_time
 		try:
 			pkt,source_addr = server_socket.recvfrom(512)
-			curtime = datetime.now()
-			cur_epoch_time = time.time()	#epoch
-
 			if(do_ttracker == True):
 				if(pkt != bytearray("WAZZAP BIATCHS ITS YA BOY JESSE", encoding='utf8')):
 					print("From: "+source_addr[0]+":"+str(source_addr[1])+": "+str(pkt))
 				else:			#we received the special message corresponding to me being here
-					elapsed_sec = cur_epoch_time - last_time
-					if(elapsed_sec > 120 and is_in_office != 0):
-						print("Left at: "+curtime.strftime("%m/%d/%Y %H:%M:%S"))
-						is_in_office = 0
-					elif(elapsed_sec <= 120 and is_in_office == 0):
-						print("Arrived at: "+curtime.strftime("%m/%d/%Y %H:%M:%S"))
-						is_in_office = 1
-
-					if(elapsed_sec > 240 and is_in_office == 0):
-						pass	#TODO: consider jesse gone for the day, and write the log file
-			
+					last_time = cur_epoch_time			
+			else:
+				print("From: "+source_addr[0]+":"+str(source_addr[1])+": "+str(pkt))
 		except BlockingIOError:
 			pass
+		if(do_ttracker == True):
+			curtime = datetime.now()
+			if(elapsed_sec > 120 and is_in_office != 0):
+				print("Left at: "+curtime.strftime("%m/%d/%Y %H:%M:%S"))
+				is_in_office = 0
+			elif(elapsed_sec <= 120):	
+				if( is_in_office == 0):
+					print("Arrived at: "+curtime.strftime("%m/%d/%Y %H:%M:%S"))
+					is_in_office = 1
+			if(elapsed_sec > 240 and is_in_office == 0):
+				pass	#TODO: consider jesse gone for the day, and write the log file
+
 		
 
 

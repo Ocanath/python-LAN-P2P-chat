@@ -32,20 +32,25 @@ def get_host_ip_to_bind(use_loopback=False):
 		return addr
 
 
-def blocking_input(kill_sig, soc, dest, myname):
+def blocking_input(kill_sig, soc, myname):
+	global gl_dest
 	while(kill_sig.is_set()==False):
 		try:
-			str = myname+input()
-			pld = bytearray(str,encoding='utf8')
-			soc.sendto(pld,dest)
+			output_str = myname+input()
+			pld = bytearray(output_str,encoding='utf8')
+			print("^To: "+gl_dest[0] + ":"+str(gl_dest[1]))
+			soc.sendto(pld,gl_dest)
 		except EOFError:
 			kill_sig.set()
 
-def print_thread(kill_sig, soc):
+def print_thread(kill_sig, soc, retarget):
+	global gl_dest
 	while(kill_sig.is_set()==False):	
 		try:
 			pkt,source_addr = server_socket.recvfrom(512)
 			print("From: "+source_addr[0]+":"+str(source_addr[1])+": "+str(pkt))
+			if(retarget == True):
+				gl_dest = source_addr			
 		except BlockingIOError:
 			pass
 		
@@ -59,6 +64,7 @@ if __name__ == "__main__":
 	parser.add_argument('--use_any',help="flag for using 0.0.0.0",action='store_true')
 	parser.add_argument("--target_ip", type=str, help="cmd line argument for ip to send messages to", default='')
 	parser.add_argument("--no_name", action='store_true')
+	parser.add_argument("--reply_mode", help="apply flag to direct outgoing messages to the last device that targeted you",action='store_true')
 	args = parser.parse_args()
 
 	port = args.port
@@ -104,10 +110,13 @@ if __name__ == "__main__":
 	dest_addr = (bkst_ip, port)
 	sendstr = myname
 	recvstr = ''
+	
+	global gl_dest
+	gl_dest = dest_addr
 
 	ks = threading.Event()
-	t0 = threading.Thread(target=blocking_input, args=(ks, server_socket,dest_addr,myname,))
-	t1 = threading.Thread(target=print_thread, args=(ks, server_socket,))
+	t0 = threading.Thread(target=blocking_input, args=(ks, server_socket, myname,))
+	t1 = threading.Thread(target=print_thread, args=(ks, server_socket, args.reply_mode,))
 
 	
 	t0.start()

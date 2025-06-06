@@ -3,6 +3,7 @@ import socket
 import argparse
 import threading
 import queue
+from datetime import datetime
 
 
 def get_port_from_usr():
@@ -45,7 +46,8 @@ def print_thread(kill_sig, soc):
 	while(kill_sig.is_set()==False):	
 		try:
 			pkt,source_addr = server_socket.recvfrom(512)
-			print("From: "+source_addr[0]+":"+str(source_addr[1])+": "+str(pkt))
+			timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+			print(f"[{timestamp}] From: {source_addr[0]}:{source_addr[1]}: {pkt}")
 		except BlockingIOError:
 			pass
 		
